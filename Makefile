@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down migrate serve test lint fmt typecheck guards gate gate-proof clean
+.PHONY: help setup db-up db-down migrate serve test lint fmt typecheck guards eval gate gate-proof clean
 
 PY := uv run
 
@@ -13,7 +13,8 @@ help:
 	@echo "make fmt        ruff format + fix"
 	@echo "make typecheck  mypy strict"
 	@echo "make guards     structural guards (size, doc freshness)"
-	@echo "make gate       everything CI runs"
+	@echo "make eval        analyst eval set (verifier + prompt regression)"
+	@echo "make gate        everything CI runs"
 	@echo "make gate-proof prove each guard rejects a planted violation"
 
 setup:
@@ -51,7 +52,10 @@ guards:
 	$(PY) python scripts/check_module_size.py
 	$(PY) python scripts/check_doc_freshness.py
 
-gate: lint typecheck test guards
+eval:
+	$(PY) python scripts/eval_analyst.py
+
+gate: lint typecheck test guards eval
 	@echo ""
 	@echo "All gates passed."
 
