@@ -19,6 +19,8 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     db_url = f"sqlite+aiosqlite:///{tmp_path / 'smoke.db'}"
     monkeypatch.setenv("SEAMLY_DATABASE_URL", db_url)
     monkeypatch.setenv("SEAMLY_SESSION_SECRET", "test-secret")
+    # The journey drives ingest and reconcile itself; auto-seed would skip them.
+    monkeypatch.setenv("SEAMLY_AUTO_SEED", "0")
     from seamly.app import create_app
     from seamly.common.db import Base, make_engine
     from seamly.config import get_settings
@@ -34,6 +36,31 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClie
     asyncio.run(create_tables())
     with TestClient(create_app()) as test_client:
         yield test_client
+    get_settings.cache_clear()
+
+
+def test_auto_seed_populates_a_fresh_boot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """With auto-seed on (the default), a fresh boot lands on a populated board."""
+
+    monkeypatch.setenv("SEAMLY_DATABASE_URL", f"sqlite+aiosqlite:///{tmp_path / 'auto.db'}")
+    monkeypatch.setenv("SEAMLY_SESSION_SECRET", "test-secret")
+    from seamly.app import create_app
+    from seamly.common.db import Base, make_engine
+    from seamly.config import get_settings
+
+    get_settings.cache_clear()
+
+    async def create_tables() -> None:
+        engine = make_engine(f"sqlite+aiosqlite:///{tmp_path / 'auto.db'}")
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        await engine.dispose()
+
+    asyncio.run(create_tables())
+    with TestClient(create_app()) as fresh:
+        summary = fresh.get("/api/v1/summary").json()
+        assert summary["total_at_risk_minor"] == 1_511_000
+        assert summary["open_exceptions"] == 7
     get_settings.cache_clear()
 
 

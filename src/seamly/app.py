@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from seamly import engine as engine_module
@@ -15,6 +17,7 @@ from seamly.config import get_settings
 from seamly.modules import analyst, auth, exception, ingest, reconcile
 from seamly.modules.auth import repository as auth_repo
 from seamly.modules.auth import service as auth_service
+from seamly.modules.ledger.models import Customer
 
 
 def register_all(app_engine: engine_module.Engine) -> None:
@@ -61,6 +64,8 @@ def create_app() -> FastAPI:
         async with sessionmaker() as session:
             await auth.handle_bootstrap_demo_user(session, {})
             await session.commit()
+            if settings.auto_seed:
+                await _auto_seed(session, app_engine)
         yield
 
     app = FastAPI(title="Seamly", version="0.1.0", lifespan=lifespan)
@@ -103,3 +108,23 @@ def create_app() -> FastAPI:
 async def get_session(request: Request) -> AsyncSession:
     session: AsyncSession = request.state.session
     return session
+
+
+async def _auto_seed(session: AsyncSession, app_engine: engine_module.Engine) -> None:
+    """Demo convenience: an empty ledger gets loaded and reconciled at boot,
+    so a fresh `make demo` lands on a populated board. Set SEAMLY_AUTO_SEED=0
+    to disable (production, or tests that drive the pipeline themselves)."""
+
+    customer_count = await session.scalar(select(func.count()).select_from(Customer))
+    if customer_count:
+        return
+    ingest_result = await app_engine.dispatch(session, "ingest.load", {})
+    if ingest_result.is_err:
+        logging.warning("auto-seed ingest failed: %s", ingest_result.error_or_raise().message)
+        return
+    reconcile_result = await app_engine.dispatch(session, "reconcile.run", {})
+    if reconcile_result.is_err:
+        logging.warning("auto-seed reconcile failed: %s", reconcile_result.error_or_raise().message)
+        return
+    priced = (reconcile_result.value or {}).get("priced", 0)
+    logging.info("auto-seed complete: %s exceptions priced", priced)

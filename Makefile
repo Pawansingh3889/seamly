@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down migrate serve test lint fmt typecheck guards eval gate gate-proof clean
+.PHONY: help setup db-up db-down migrate serve demo demo-reset test lint fmt typecheck guards eval gate gate-proof clean
 
 PY := uv run
 
@@ -8,6 +8,8 @@ help:
 	@echo "make db-down    Stop Postgres"
 	@echo "make migrate    Apply alembic migrations"
 	@echo "make serve      Run the dev server on :8010"
+	@echo "make demo       db + migrations + auto-seeded server (demo mode)"
+	@echo "make demo-reset Wipe and reseed the demo data"
 	@echo "make test       Run the test suite"
 	@echo "make lint       ruff check + format check"
 	@echo "make fmt        ruff format + fix"
@@ -33,6 +35,13 @@ migrate:
 
 serve:
 	$(PY) uvicorn seamly.app:create_app --factory --reload --port 8010
+
+demo: db-up migrate
+	@echo "Demo boots seeded: log in as cfo@kestrel.example / demo-secret"
+	$(MAKE) serve
+
+demo-reset: db-up
+	$(PY) python scripts/seed_demo.py
 
 test:
 	$(PY) pytest

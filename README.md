@@ -31,9 +31,35 @@ make migrate         # schema + append-only audit trigger
 make serve           # http://localhost:8010
 ```
 
+## Run the demo
+
+```bash
+make demo            # db + migrations + auto-seeded server on :8010
+```
+
+Open http://localhost:8010, click **Enter the demo as CFO**. The board
+opens seeded with a synthetic UK manufacturer: 7 exceptions, 15,110
+pounds at risk. Mangled the data mid-demo? `make demo-reset` wipes and
+reseeds. Switch the demo to the food vertical with
+`SEAMLY_FIXTURE_DIR=data/fixtures/food make demo` (10 exceptions,
+95,405 pounds, including a rejected batch shipped after its hold).
+
+### The 60-second walkthrough
+
+1. Board: money at risk, top exceptions, at-risk by rule and by customer.
+2. Drill into a customer, then an exception: every pound shows its
+   arithmetic and the exact records behind it.
+3. Assign it to an owner, resolve it with a credit note: the recovery
+   total moves. The weekly digest writes itself from the same store.
+4. Ask the analyst a question: answers cite the exceptions they used,
+   and figures are verified against the data or the answer is discarded.
+
+## Tests and gates
+
 ```bash
 make test            # full suite, SQLite in-memory, no daemon needed
-make gate            # lint, types, size guard, doc freshness
+make gate            # lint, types, size guard, doc freshness, analyst eval
+make demo-reset      # wipe and reseed the demo data
 ```
 
 ## Layout

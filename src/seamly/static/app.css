@@ -24,3 +24,7 @@ button { background: #2f5fe0; color: #fff; border: 0; border-radius: 6px; paddin
 button:hover { background: #274fbe; }
 .error { color: #b3261e; }
 .hint { color: #5b6b83; font-size: 0.85rem; }
+button.secondary { background: #41506a; }
+button.secondary:hover { background: #2f3b52; }
+form.owner-filter { display: flex; gap: 0.6rem; align-items: end; margin-bottom: 1rem; }
+ul.digest-lines li { margin-bottom: 0.4rem; font-family: ui-monospace, monospace; font-size: 0.85rem; }

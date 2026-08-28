@@ -8,5 +8,10 @@
   <label>Password <input type="password" name="password" required></label>
   <button type="submit">Log in</button>
 </form>
-<p class="hint">Demo user: cfo@kestrel.example / demo-secret</p>
+<form method="post" action="/login">
+  <input type="hidden" name="email" value="cfo@kestrel.example">
+  <input type="hidden" name="password" value="demo-secret">
+  <button type="submit" class="secondary">Enter the demo as CFO</button>
+</form>
+<p class="hint">Demo user: cfo@kestrel.example / demo-secret. All data is synthetic.</p>
 {% endblock %}
