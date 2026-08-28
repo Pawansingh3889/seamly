@@ -1,4 +1,4 @@
-# Seamly — Problem Statement
+# Seamly , Problem Statement
 
 > **Last updated:** 28 August 2026
 > **Update rule:** this file changes whenever discovery evidence arrives.

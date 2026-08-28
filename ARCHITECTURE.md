@@ -1,4 +1,4 @@
-# Seamly — Architecture
+# Seamly , Architecture
 
 > **Last updated:** 28 August 2026
 > **Update rule:** this file is updated with every structural change
