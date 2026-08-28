@@ -65,14 +65,45 @@ async def summary(request: Request) -> dict[str, Any]:
     }
 
 
-@router.get("/exceptions")
-async def exceptions(request: Request, status: str | None = None) -> list[dict[str, Any]]:
+@router.get("/summary/by-customer")
+async def summary_by_customer(request: Request) -> list[dict[str, Any]]:
     session = _session(request)
-    rows = await exception_repo.all_exceptions(session, status)
+    rows = await exception_repo.at_risk_by_customer(session)
+    return [
+        {
+            "customer_id": r.customer_id,
+            "customer_name": r.customer_name,
+            "amount_minor": r.amount_minor,
+            "exception_count": r.exception_count,
+        }
+        for r in rows
+    ]
+
+
+@router.get("/digest")
+async def digest(request: Request, week_start: str | None = None) -> dict[str, Any]:
+    payload: dict[str, Any] = {"week_start": week_start} if week_start else {}
+    result = await _engine(request).dispatch(_session(request), "exception.digest", payload)
+    if result.is_err:
+        err = result.error_or_raise()
+        raise HTTPException(status_code=400, detail={"code": err.code, "message": err.message})
+    return {"ok": True, **(result.value or {})}
+
+
+@router.get("/exceptions")
+async def exceptions(
+    request: Request,
+    status: str | None = None,
+    customer_id: int | None = None,
+    owner: str | None = None,
+) -> list[dict[str, Any]]:
+    session = _session(request)
+    rows = await exception_repo.all_exceptions(session, status, customer_id, owner)
     return [
         {
             "id": r.id,
             "rule_id": r.rule_id,
+            "customer_id": r.customer_id,
             "amount_minor": r.amount_minor,
             "currency": r.currency,
             "status": r.status,

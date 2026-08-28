@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://seamly:seamly@localhost:5433/seamly"
     session_secret: str = "dev-secret-change-me"
     fixture_dir: str = "data/fixtures/generic"
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_model: str = ""
 
 
 @lru_cache(maxsize=1)

@@ -1,19 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Worklist : Seamly{% endblock %}
+{% block title %}{{ customer_name }} : Seamly{% endblock %}
 {% block content %}
-<h1>Worklist</h1>
-<form method="get" action="/worklist" class="owner-filter">
-  <label>Filter by owner <input name="owner" value="{{ owner or '' }}"></label>
-  <button type="submit">Filter</button>
-</form>
+<h1>{{ customer_name }}</h1>
+<p>Open money at risk: <strong>&pound;{{ at_risk_minor | gbp }}</strong></p>
+
 {% if rows %}
 <table>
-  <thead><tr><th>Rule</th><th>Amount</th><th>Formula</th><th></th></tr></thead>
+  <thead><tr><th>Rule</th><th>Amount</th><th>Status</th><th>Owner</th><th>Formula</th><th></th></tr></thead>
   <tbody>
   {% for record in rows %}
     <tr>
       <td>{{ record.rule_id }}</td>
       <td>&pound;{{ record.amount_minor | gbp }}</td>
+      <td>{{ record.status }}</td>
+      <td>{{ record.owner or '' }}</td>
       <td class="formula">{{ record.formula }}</td>
       <td><a href="/exceptions/{{ record.id }}">Open</a></td>
     </tr>
@@ -21,6 +21,6 @@
   </tbody>
 </table>
 {% else %}
-<p>Nothing open. Good.</p>
+<p>No exceptions recorded for this customer.</p>
 {% endif %}
 {% endblock %}

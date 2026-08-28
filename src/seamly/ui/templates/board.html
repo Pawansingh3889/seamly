@@ -17,6 +17,25 @@
   </div>
 </section>
 
+<h2>At risk by customer</h2>
+{% if by_customer %}
+<table>
+  <thead><tr><th>Customer</th><th>Amount</th><th>Exceptions</th><th></th></tr></thead>
+  <tbody>
+  {% for row in by_customer %}
+    <tr>
+      <td>{{ row.customer_name }}</td>
+      <td>&pound;{{ row.amount_minor | gbp }}</td>
+      <td>{{ row.exception_count }}</td>
+      <td><a href="/customers/{{ row.customer_id }}">Drill down</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nothing open by customer.</p>
+{% endif %}
+
 <h2>At risk by rule</h2>
 {% if by_rule %}
 <table>

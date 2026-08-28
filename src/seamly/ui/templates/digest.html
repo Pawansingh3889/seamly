@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Weekly digest : Seamly{% endblock %}
+{% block content %}
+<h1>Weekly digest</h1>
+<p class="hint">Week commencing {{ digest.week_start }}. Generated from the exception store; nothing here is an opinion.</p>
+
+<section class="cards">
+  <div class="card">
+    <span class="label">Open money at risk</span>
+    <span class="figure">&pound;{{ digest.at_risk_minor | gbp }}</span>
+  </div>
+  <div class="card">
+    <span class="label">Recovered this week</span>
+    <span class="figure good">&pound;{{ digest.recovered_this_week_minor | gbp }}</span>
+  </div>
+  <div class="card">
+    <span class="label">Open exceptions</span>
+    <span class="figure">{{ digest.open_count }}</span>
+  </div>
+</section>
+
+{% for section in digest.sections %}
+<h2>{{ section.heading }}</h2>
+<ul class="digest-lines">
+  {% for line in section.lines %}
+    <li>{{ line }}</li>
+  {% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}

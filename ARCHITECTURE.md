@@ -65,8 +65,8 @@ modules/<name>/
 | ledger    | customer, contract, price_book_entry, order, order_line, delivery, delivery_line, invoice, invoice_line, service_event | the canonical model; nothing downstream may bypass it |
 | reconcile | exception drafts | matching rules are pure functions over typed rows |
 | scoring   | priced exceptions | every pound figure is a stored formula over named records and the price book |
-| exception | exception, assignment, recovery ledger | the system of record for the loop: open, assigned, resolved, recovered |
-| analyst   | Q&A sessions, answers | phase 2; LLM narration over retrieval, citation-verified, never computes figures |
+| exception | exception, assignment, recovery ledger, weekly digest | the system of record for the loop: open, assigned, resolved, recovered; the digest is built only from this store, with deterministic per-rule actions |
+| analyst   | Q&A answers | LLM narration over retrieval, citation-verified by a deterministic checker; never computes figures. Disabled until SEAMLY_LLM_* is configured |
 | auth      | user_account, session | roles: ops, analyst, cfo, admin |
 | audit     | audit_log | append-only, DB-enforced, see §5 |
 

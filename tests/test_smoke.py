@@ -97,7 +97,22 @@ def test_full_journey(client: TestClient):
         "/api/v1/analyst/ask", json={"payload": {"question": "why is revenue down?"}}
     )
     assert analyst.status_code == 400
-    assert analyst.json()["detail"]["code"] == "analyst.not_ready"
+    assert analyst.json()["detail"]["code"] == "analyst.not_configured"
+
+    by_customer = client.get("/api/v1/summary/by-customer").json()
+    amounts = {row["customer_name"]: row["amount_minor"] for row in by_customer}
+    assert amounts["Calder Engineering Ltd"] == 682_500 - 487_500  # duplicate resolved above
+
+    digest = client.get("/api/v1/digest").json()
+    assert digest["ok"]
+    assert digest["recovered_this_week_minor"] == 487_500
+    headings = [section["heading"] for section in digest["sections"]]
+    assert "Recommended actions" in headings
+
+    customer_page = client.get("/customers/3")
+    assert customer_page.status_code == 200
+    digest_page = client.get("/digest")
+    assert digest_page.status_code == 200
 
     board = client.get("/")
     assert board.status_code == 200

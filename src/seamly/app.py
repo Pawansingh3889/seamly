@@ -33,6 +33,11 @@ def register_all(app_engine: engine_module.Engine) -> None:
         exception.handle_accept_risk,
         exception.PERMISSIONS["exception.accept_risk"],
     )
+    app_engine.register(
+        "exception.digest",
+        exception.handle_digest,
+        exception.PERMISSIONS["exception.digest"],
+    )
     app_engine.register("analyst.ask", analyst.handle_ask, analyst.PERMISSIONS["analyst.ask"])
     app_engine.register("auth.login", auth.handle_login, auth.PERMISSIONS["auth.login"])
     app_engine.register("auth.logout", auth.handle_logout, auth.PERMISSIONS["auth.logout"])

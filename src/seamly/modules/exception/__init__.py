@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from seamly.common.types import Result
 from seamly.modules.exception import repository as exception_repo
+from seamly.modules.exception.digest import build_digest
 from seamly.modules.exception.models import (
     STATUS_ACCEPTED_RISK,
     STATUS_ASSIGNED,
@@ -19,6 +20,7 @@ PERMISSIONS: dict[str, set[str]] = {
     "exception.assign": {"ops", "analyst", "cfo", "admin"},
     "exception.resolve": {"ops", "analyst", "cfo", "admin"},
     "exception.accept_risk": {"cfo", "admin"},
+    "exception.digest": {"ops", "analyst", "cfo", "admin"},
 }
 
 
@@ -73,3 +75,35 @@ async def handle_accept_risk(session: AsyncSession, payload: dict[str, Any]) -> 
     record.status = STATUS_ACCEPTED_RISK
     record.owner = payload.get("owner", record.owner)
     return Result.ok({"id": record.id, "reason": reason})
+
+
+def week_start_for(today: date) -> date:
+    """Monday of the week containing today."""
+
+    return today - timedelta(days=today.weekday())
+
+
+async def handle_digest(session: AsyncSession, payload: dict[str, Any]) -> Result[Any]:
+    raw_week_start = payload.get("week_start")
+    try:
+        week_start = (
+            date.fromisoformat(str(raw_week_start))
+            if raw_week_start
+            else week_start_for(date.today())
+        )
+    except ValueError:
+        return Result.err(
+            "exception.bad_week_start",
+            f"week_start must be an ISO date (YYYY-MM-DD), got {raw_week_start!r}.",
+        )
+    inputs = await exception_repo.load_digest_inputs(session, week_start)
+    digest = build_digest(inputs)
+    return Result.ok(
+        {
+            "week_start": digest.week_start,
+            "at_risk_minor": digest.at_risk_minor,
+            "recovered_this_week_minor": digest.recovered_this_week_minor,
+            "open_count": digest.open_count,
+            "sections": [{"heading": s.heading, "lines": s.lines} for s in digest.sections],
+        }
+    )

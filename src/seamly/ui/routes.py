@@ -32,6 +32,7 @@ async def board(request: Request) -> Any:
     by_rule: dict[str, int] = {}
     for row in open_rows:
         by_rule[row.rule_id] = by_rule.get(row.rule_id, 0) + row.amount_minor
+    by_customer = await exception_repo.at_risk_by_customer(session)
     return templates.TemplateResponse(
         request,
         "board.html",
@@ -43,6 +44,46 @@ async def board(request: Request) -> Any:
             "open_count": len(open_rows),
             "top": open_rows[:8],
             "by_rule": sorted(by_rule.items(), key=lambda kv: kv[1], reverse=True),
+            "by_customer": by_customer,
+        },
+    )
+
+
+@router.get("/customers/{customer_id}", response_class=HTMLResponse)
+async def customer_view(request: Request, customer_id: int) -> Any:
+    session = request.state.session
+    name = await exception_repo.customer_name(session, customer_id)
+    if name is None:
+        return HTMLResponse("Not found", status_code=404)
+    rows = await exception_repo.all_exceptions(session, customer_id=customer_id)
+    open_rows = [r for r in rows if r.status in ("open", "assigned")]
+    return templates.TemplateResponse(
+        request,
+        "customer.html",
+        {
+            "actor": request.state.actor,
+            "role": request.state.role,
+            "customer_name": name,
+            "customer_id": customer_id,
+            "rows": rows,
+            "at_risk_minor": sum(r.amount_minor for r in open_rows),
+        },
+    )
+
+
+@router.get("/digest", response_class=HTMLResponse)
+async def digest_page(request: Request) -> Any:
+    result = await request.state.app_engine.dispatch(request.state.session, "exception.digest", {})
+    if result.is_err:
+        return HTMLResponse(result.error_or_raise().message, status_code=400)
+    data = result.value or {}
+    return templates.TemplateResponse(
+        request,
+        "digest.html",
+        {
+            "actor": request.state.actor,
+            "role": request.state.role,
+            "digest": data,
         },
     )
 
@@ -77,13 +118,18 @@ async def logout(request: Request) -> Any:
 
 
 @router.get("/worklist", response_class=HTMLResponse)
-async def worklist(request: Request) -> Any:
+async def worklist(request: Request, owner: str | None = None) -> Any:
     session = request.state.session
-    rows = await exception_repo.all_exceptions(session, STATUS_OPEN)
+    rows = await exception_repo.all_exceptions(session, STATUS_OPEN, owner=owner)
     return templates.TemplateResponse(
         request,
         "worklist.html",
-        {"actor": request.state.actor, "role": request.state.role, "rows": rows},
+        {
+            "actor": request.state.actor,
+            "role": request.state.role,
+            "rows": rows,
+            "owner": owner,
+        },
     )
 
 
