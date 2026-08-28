@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down migrate serve demo demo-reset test lint fmt typecheck guards eval gate gate-proof clean
+.PHONY: help setup db-up db-down migrate serve demo demo-stop demo-reset test lint fmt typecheck guards eval gate gate-proof clean
 
 PY := uv run
 
@@ -9,6 +9,7 @@ help:
 	@echo "make migrate    Apply alembic migrations"
 	@echo "make serve      Run the dev server on :8010"
 	@echo "make demo       db + migrations + auto-seeded server (demo mode)"
+	@echo "make demo-stop  Kill whatever holds port 8010"
 	@echo "make demo-reset Wipe and reseed the demo data"
 	@echo "make test       Run the test suite"
 	@echo "make lint       ruff check + format check"
@@ -36,9 +37,15 @@ migrate:
 serve:
 	$(PY) uvicorn seamly.app:create_app --factory --reload --port 8010
 
-demo: db-up migrate
+demo: db-up migrate demo-stop
 	@echo "Demo boots seeded: log in as cfo@kestrel.example / demo-secret"
 	$(MAKE) serve
+
+# A stale uvicorn from a previous session holds :8010 and the new server
+# dies with Errno 98; clear it first so demo always just works.
+demo-stop:
+	@for pid in $$(ss -ltnp 2>/dev/null | sed -n 's/.*:8010 .*pid=\([0-9]*\).*/\1/p' | sort -u); do \
+		echo "stopping stale server pid $$pid"; kill -9 $$pid 2>/dev/null; done; true
 
 demo-reset: db-up
 	$(PY) python scripts/seed_demo.py
