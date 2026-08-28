@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}CFO board : Seamly{% endblock %}
+{% block content %}
+<h1>Enterprise money at risk</h1>
+<section class="cards">
+  <div class="card">
+    <span class="label">At risk (open + assigned)</span>
+    <span class="figure">&pound;{{ at_risk_minor | gbp }}</span>
+  </div>
+  <div class="card">
+    <span class="label">Recovered all time</span>
+    <span class="figure good">&pound;{{ recovered_minor | gbp }}</span>
+  </div>
+  <div class="card">
+    <span class="label">Open exceptions</span>
+    <span class="figure">{{ open_count }}</span>
+  </div>
+</section>
+
+<h2>At risk by rule</h2>
+{% if by_rule %}
+<table>
+  <thead><tr><th>Rule</th><th>Amount</th></tr></thead>
+  <tbody>
+  {% for rule, amount in by_rule %}
+    <tr><td>{{ rule }}</td><td>&pound;{{ amount | gbp }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nothing open. Run the pipeline to load sources and reconcile.</p>
+{% endif %}
+
+<h2>Top exceptions</h2>
+{% if top %}
+<table>
+  <thead><tr><th>Rule</th><th>Amount</th><th>Status</th><th>Owner</th><th></th></tr></thead>
+  <tbody>
+  {% for record in top %}
+    <tr>
+      <td>{{ record.rule_id }}</td>
+      <td>&pound;{{ record.amount_minor | gbp }}</td>
+      <td>{{ record.status }}</td>
+      <td>{{ record.owner or '' }}</td>
+      <td><a href="/exceptions/{{ record.id }}">Open</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No exceptions yet.</p>
+{% endif %}
+{% endblock %}

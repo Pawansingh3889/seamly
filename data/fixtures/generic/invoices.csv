@@ -1,0 +1,7 @@
+invoice_id,external_ref,order_ref,customer,invoice_date,contract_id
+I-7001,INV-A7802,AO-7802,ACME Industrial Supplies,2026-07-05,CON-ACME
+I-7002,INV-B4410,BF-4410,Brightwater Foods Ltd,2026-07-06,CON-BRW
+I-7003,PO-8817,CE-1190,Calder Engineering Ltd,2026-07-07,CON-CAL
+I-7004,PO-8817,CE-1190,Calder Engineering Ltd,2026-07-09,CON-CAL
+I-7005,INV-C1191,CE-1191,Calder Engineering Limited,2026-07-10,CON-CAL
+I-7006,INV-B4433,BF-4433,Brightwater Foods Ltd,2026-07-10,CON-BRW

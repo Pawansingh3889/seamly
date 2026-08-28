@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Exception #{{ record.id }} : Seamly{% endblock %}
+{% block content %}
+<h1>{{ record.rule_id }}: &pound;{{ record.amount_minor | gbp }} {{ record.status }}</h1>
+
+<section class="detail">
+  <h2>The arithmetic</h2>
+  <p class="formula">{{ record.formula }}</p>
+
+  <h2>The records behind it</h2>
+  <ul class="refs">
+    {% for ref in record.record_refs.split('|') %}
+      <li><code>{{ ref }}</code></li>
+    {% endfor %}
+  </ul>
+
+  <p>Status: {{ record.status }}{% if record.owner %}, owner {{ record.owner }}{% endif %}</p>
+</section>
+
+{% if record.status in ('open', 'assigned') %}
+<section class="actions">
+  <h2>Assign</h2>
+  <form method="post" action="/exceptions/{{ record.id }}/assign" class="stacked">
+    <label>Owner <input name="owner" required></label>
+    <button type="submit">Assign</button>
+  </form>
+
+  <h2>Resolve with recovery</h2>
+  <form method="post" action="/exceptions/{{ record.id }}/resolve" class="stacked">
+    <label>Recovered amount (pence) <input name="amount_minor" type="number" min="0" required></label>
+    <label>Evidence <input name="evidence" required></label>
+    <button type="submit">Record recovery and resolve</button>
+  </form>
+</section>
+{% endif %}
+
+{% if recoveries %}
+<h2>Recovery history</h2>
+<table>
+  <thead><tr><th>Date</th><th>Amount</th><th>Evidence</th></tr></thead>
+  <tbody>
+  {% for entry in recoveries %}
+    <tr><td>{{ entry.recovered_on }}</td><td>&pound;{{ entry.amount_minor | gbp }}</td><td>{{ entry.evidence }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

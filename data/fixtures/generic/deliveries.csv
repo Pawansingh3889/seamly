@@ -1,0 +1,6 @@
+delivery_id,carrier_reference,order_ref,customer,delivery_date
+D-5001,HAUL-11,AO-7781,Acme Industrial Supplies Ltd,2026-06-28
+D-5002,HAUL-12,AO-7802,ACME Industrial Supplies,2026-07-02
+D-5003,HAUL-13,BF-4410,Brightwater Foods,2026-07-09
+D-5004,HAUL-14,CE-1190,Calder Engineering Limited,2026-07-06
+D-5005,HAUL-15,BF-4433,Brightwater Foods Ltd,2026-07-08

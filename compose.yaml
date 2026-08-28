@@ -1,0 +1,20 @@
+services:
+  db:
+    image: docker.io/library/postgres:16
+    container_name: seamly-db
+    environment:
+      POSTGRES_USER: seamly
+      POSTGRES_PASSWORD: seamly
+      POSTGRES_DB: seamly
+    ports:
+      - "5433:5432"
+    volumes:
+      - seamly-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seamly"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  seamly-pgdata:

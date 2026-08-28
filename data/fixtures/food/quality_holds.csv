@@ -1,0 +1,3 @@
+hold_id,batch_id,reason,hold_date,released
+H-3301,B-2201,temperature excursion,2026-07-03,no
+H-3302,B-2202,routine swab,2026-07-05,yes

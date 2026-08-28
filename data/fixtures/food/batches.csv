@@ -1,0 +1,3 @@
+batch_id,customer,sku,production_date,planned_units,actual_units
+B-2201,Brightwater Foods Ltd,FD-220,2026-07-02,200,182
+B-2202,Brightwater Foods Ltd,FD-220,2026-07-04,150,150

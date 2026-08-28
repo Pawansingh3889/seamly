@@ -1,0 +1,4 @@
+movement_id,batch_id,sku,quantity,direction,movement_date
+M-4401,B-2201,FD-220,182,out,2026-07-06
+M-4402,B-2201,FD-220,18,writeoff,2026-07-09
+M-4403,B-2202,FD-220,150,out,2026-07-08

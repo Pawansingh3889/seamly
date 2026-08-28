@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Worklist : Seamly{% endblock %}
+{% block content %}
+<h1>Worklist</h1>
+{% if rows %}
+<table>
+  <thead><tr><th>Rule</th><th>Amount</th><th>Formula</th><th></th></tr></thead>
+  <tbody>
+  {% for record in rows %}
+    <tr>
+      <td>{{ record.rule_id }}</td>
+      <td>&pound;{{ record.amount_minor | gbp }}</td>
+      <td class="formula">{{ record.formula }}</td>
+      <td><a href="/exceptions/{{ record.id }}">Open</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nothing open. Good.</p>
+{% endif %}
+{% endblock %}
