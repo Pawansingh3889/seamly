@@ -1,4 +1,4 @@
-.PHONY: help setup db-up db-down migrate serve demo demo-stop demo-reset test lint fmt typecheck guards eval gate gate-proof clean
+.PHONY: help setup db-up db-down migrate serve demo demo-stop demo-reset requirements test lint fmt typecheck guards eval gate gate-proof clean
 
 PY := uv run
 
@@ -11,6 +11,7 @@ help:
 	@echo "make demo       db + migrations + auto-seeded server (demo mode)"
 	@echo "make demo-stop  Kill whatever holds port 8010"
 	@echo "make demo-reset Wipe and reseed the demo data"
+	@echo "make requirements  Regenerate requirements.txt for Vercel"
 	@echo "make test       Run the test suite"
 	@echo "make lint       ruff check + format check"
 	@echo "make fmt        ruff format + fix"
@@ -49,6 +50,12 @@ demo-stop:
 
 demo-reset: db-up
 	$(PY) python scripts/seed_demo.py
+
+# Regenerate requirements.txt for Vercel's Python builder; the project
+# itself is excluded (api/index.py puts src/ on sys.path instead).
+requirements:
+	$(PY) uv export --format requirements-txt --no-hashes --no-dev -o requirements.txt
+	@sed -i '/^-e \./d' requirements.txt
 
 test:
 	$(PY) pytest

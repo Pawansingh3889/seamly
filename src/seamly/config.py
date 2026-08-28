@@ -10,7 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SEAMLY_", env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://seamly:seamly@localhost:5433/seamly"
+    # Empty by default: a deploy without a database renders a clear 503
+    # instead of crashing. Local dev sets it via .env (see .env.example).
+    database_url: str = ""
     session_secret: str = "dev-secret-change-me"
     fixture_dir: str = "data/fixtures/generic"
     auto_seed: bool = True

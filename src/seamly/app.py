@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,19 +54,28 @@ def register_all(app_engine: engine_module.Engine) -> None:
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    db_engine = make_engine(settings.database_url)
-    sessionmaker = make_sessionmaker(db_engine)
+    if settings.database_url:
+        db_engine = make_engine(settings.database_url)
+        sessionmaker = make_sessionmaker(db_engine)
+    else:
+        sessionmaker = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app_engine = engine_module.new_engine(actor="system", role="admin")
         register_all(app_engine)
         app.state.engine = app_engine
-        async with sessionmaker() as session:
-            await auth.handle_bootstrap_demo_user(session, {})
-            await session.commit()
-            if settings.auto_seed:
-                await _auto_seed(session, app_engine)
+        if sessionmaker is None:
+            logging.warning(
+                "No database configured (SEAMLY_DATABASE_URL is empty); "
+                "every request will return 503 until one is set."
+            )
+        else:
+            async with sessionmaker() as session:
+                await auth.handle_bootstrap_demo_user(session, {})
+                await session.commit()
+                if settings.auto_seed:
+                    await _auto_seed(session, app_engine)
         yield
 
     app = FastAPI(title="Seamly", version="0.1.0", lifespan=lifespan)
@@ -83,6 +93,12 @@ def create_app() -> FastAPI:
     async def attach_engine_and_session(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
+        if sessionmaker is None:
+            return PlainTextResponse(
+                "Seamly is not connected to a database. Set SEAMLY_DATABASE_URL "
+                "(postgresql+asyncpg://...) and redeploy.",
+                status_code=503,
+            )
         token = request.cookies.get("seamly_session", "")
         role, actor = "anonymous", "anonymous"
         async with sessionmaker() as session:

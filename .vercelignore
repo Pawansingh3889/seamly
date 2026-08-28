@@ -1,0 +1,13 @@
+.venv/
+.git/
+.github/
+tests/
+docs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.db
+compose.yaml
+Makefile
+alembic/
+alembic.ini

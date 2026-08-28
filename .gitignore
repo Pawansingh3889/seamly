@@ -10,3 +10,5 @@ coverage.json
 *.db
 dist/
 build/
+.vercel
+.env*
