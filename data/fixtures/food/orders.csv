@@ -1,0 +1,7 @@
+order_id,order_ref,customer,promised_date
+O-1001,AO-7781,Acme Industrial Supplies Ltd,2026-06-28
+O-1002,AO-7802,Acme Industrial Supplies Ltd,2026-07-02
+O-1003,BF-4410,Brightwater Foods Ltd,2026-07-05
+O-1004,CE-1190,Calder Engineering Ltd,2026-07-06
+O-1005,BF-4433,Brightwater Foods Ltd,2026-07-08
+O-1006,BF-4444,Brightwater Foods Ltd,2026-07-11

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from seamly.common.db import Base
@@ -112,3 +112,44 @@ class ServiceEvent(Base):
     units: Mapped[int] = mapped_column(Integer)
     event_date: Mapped[date] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Batch(Base):
+    """Food vertical: a production batch with planned and achieved yield."""
+
+    __tablename__ = "batch"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True)
+    customer_id: Mapped[int] = mapped_column(ForeignKey("customer.id"))
+    sku: Mapped[str] = mapped_column(String(64))
+    production_date: Mapped[date] = mapped_column(Date)
+    planned_units: Mapped[int] = mapped_column(Integer)
+    actual_units: Mapped[int] = mapped_column(Integer)
+
+
+class QualityHold(Base):
+    """Food vertical: a QC hold against a batch; released=no means blocked."""
+
+    __tablename__ = "quality_hold"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("batch.id"))
+    reason: Mapped[str] = mapped_column(String(255))
+    hold_date: Mapped[date] = mapped_column(Date)
+    released: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class StockMovement(Base):
+    """Food vertical: batch-level stock movement (out, writeoff, return)."""
+
+    __tablename__ = "stock_movement"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True)
+    batch_id: Mapped[int] = mapped_column(ForeignKey("batch.id"))
+    sku: Mapped[str] = mapped_column(String(64))
+    quantity: Mapped[int] = mapped_column(Integer)
+    direction: Mapped[str] = mapped_column(String(16))
+    movement_date: Mapped[date] = mapped_column(Date)

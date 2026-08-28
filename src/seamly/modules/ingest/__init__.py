@@ -165,6 +165,11 @@ async def handle_load(session: AsyncSession, payload: dict[str, Any]) -> Result[
         )
     await ledger_repository.replace_service_events(session, events)
 
+    if bundle.batches:
+        food = await _load_food_rows(session, bundle, customer_for)
+        if food.is_err:
+            return Result.err(food.error_or_raise().code, food.error_or_raise().message)
+
     return Result.ok({"run_id": ingest_service.new_run_id()})
 
 
@@ -173,3 +178,59 @@ async def _contract_id(session: AsyncSession, code: str) -> int:
     if found is None:
         raise ValueError(f"invoice references unknown contract {code!r}.")
     return found.id
+
+
+async def _load_food_rows(session: AsyncSession, bundle: Any, customer_for: Any) -> Result[Any]:
+    """Food vertical pack: batches, holds and movements, when present."""
+
+    from seamly.modules.ledger.models import Batch, QualityHold, StockMovement
+
+    batches: dict[str, Batch] = {}
+    for brow in bundle.batches:
+        batches[brow.batch_id] = Batch(
+            code=brow.batch_id,
+            customer_id=customer_for(brow.customer),
+            sku=brow.sku,
+            production_date=_as_date(brow.production_date, f"batch {brow.batch_id}"),
+            planned_units=brow.planned_units,
+            actual_units=brow.actual_units,
+        )
+    holds_by_batch: dict[str, list[QualityHold]] = {}
+    for hrow in bundle.quality_holds:
+        if hrow.batch_id not in batches:
+            return Result.err(
+                "ingest.orphan_line",
+                f"quality_holds row references unknown batch {hrow.batch_id!r}.",
+            )
+        holds_by_batch.setdefault(hrow.batch_id, []).append(
+            QualityHold(
+                code=hrow.hold_id,
+                batch_id=0,
+                reason=hrow.reason,
+                hold_date=_as_date(hrow.hold_date, f"quality hold {hrow.hold_id}"),
+                released=hrow.released.strip().lower() == "yes",
+            )
+        )
+    movements_by_batch: dict[str, list[StockMovement]] = {}
+    for mrow in bundle.stock_movements:
+        if mrow.batch_id not in batches:
+            return Result.err(
+                "ingest.orphan_line",
+                f"stock_movements row references unknown batch {mrow.batch_id!r}.",
+            )
+        movements_by_batch.setdefault(mrow.batch_id, []).append(
+            StockMovement(
+                code=mrow.movement_id,
+                batch_id=0,
+                sku=mrow.sku,
+                quantity=mrow.quantity,
+                direction=mrow.direction,
+                movement_date=_as_date(mrow.movement_date, f"stock movement {mrow.movement_id}"),
+            )
+        )
+    rows = [
+        (batch, holds_by_batch.get(code, []), movements_by_batch.get(code, []))
+        for code, batch in batches.items()
+    ]
+    await ledger_repository.replace_food_rows(session, rows)
+    return Result.ok({"batches": len(rows)})

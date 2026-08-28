@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from seamly.modules.ledger.models import (
+    Batch,
     Contract,
     Customer,
     Delivery,
@@ -15,7 +16,9 @@ from seamly.modules.ledger.models import (
     Order,
     OrderLine,
     PriceBookEntry,
+    QualityHold,
     ServiceEvent,
+    StockMovement,
 )
 
 
@@ -155,3 +158,24 @@ async def all_customers(session: AsyncSession) -> list[Customer]:
 async def all_contracts(session: AsyncSession) -> list[Contract]:
     rows = await session.execute(select(Contract))
     return list(rows.scalars())
+
+
+async def replace_food_rows(
+    session: AsyncSession,
+    batches: list[tuple[Batch, list[QualityHold], list[StockMovement]]],
+) -> None:
+    """Each entry is (batch, its quality holds, its stock movements)."""
+
+    for batch, holds, movements in batches:
+        existing = await session.scalar(select(Batch).where(Batch.code == batch.code))
+        if existing:
+            await session.delete(existing)
+            await session.flush()
+        session.add(batch)
+        await session.flush()
+        for hold in holds:
+            hold.batch_id = batch.id
+            session.add(hold)
+        for movement in movements:
+            movement.batch_id = batch.id
+            session.add(movement)

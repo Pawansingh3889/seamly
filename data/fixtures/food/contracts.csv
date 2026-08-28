@@ -1,0 +1,4 @@
+contract_id,customer_id,invoice_window_days,duplicate_window_days,late_delivery_penalty_minor
+CON-ACME,C-001,21,14,15000
+CON-BRW,C-002,21,14,20000
+CON-CAL,C-003,21,14,10000

@@ -20,6 +20,9 @@ RULE_ACTIONS: dict[str, str] = {
     "R05": "Recover the duplicate payment or cancel the second invoice.",
     "R06": "Raise the service invoice from the recorded service events.",
     "R07": "Issue the late-delivery credit before the customer finds it.",
+    "F01": "Quarantine the held batch and confirm the shipment was stopped or recalled.",
+    "F02": "Review the yield variance and correct the costing or the invoice.",
+    "F03": "Write the stock off against the batch record and check open demand first.",
 }
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -88,6 +88,35 @@ class ServiceEventCsv:
 
 
 @dataclass
+class BatchCsv:
+    batch_id: str
+    customer: str
+    sku: str
+    production_date: str
+    planned_units: int
+    actual_units: int
+
+
+@dataclass
+class QualityHoldCsv:
+    hold_id: str
+    batch_id: str
+    reason: str
+    hold_date: str
+    released: str
+
+
+@dataclass
+class StockMovementCsv:
+    movement_id: str
+    batch_id: str
+    sku: str
+    quantity: int
+    direction: str
+    movement_date: str
+
+
+@dataclass
 class SourceBundle:
     """Everything one ingest run needs, already validated and name-normalised."""
 
@@ -101,3 +130,6 @@ class SourceBundle:
     invoices: list[InvoiceCsv]
     invoice_lines: list[InvoiceLineCsv]
     service_events: list[ServiceEventCsv]
+    batches: list[BatchCsv] = field(default_factory=list)
+    quality_holds: list[QualityHoldCsv] = field(default_factory=list)
+    stock_movements: list[StockMovementCsv] = field(default_factory=list)

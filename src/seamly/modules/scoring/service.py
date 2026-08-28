@@ -23,6 +23,9 @@ REASONS = {
     RULE_DUPLICATE_INVOICE: "duplicate invoice",
     RULE_SERVICE_NOT_INVOICED: "service completed but never invoiced",
     RULE_LATE_DELIVERY_CREDIT: "late delivery credit owed to the customer",
+    "F01": "stock from a rejected, unreleased batch was shipped",
+    "F02": "invoiced beyond what the batch actually produced",
+    "F03": "stock written off at end of shelf life",
 }
 
 

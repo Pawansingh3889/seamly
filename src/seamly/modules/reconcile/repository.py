@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from seamly.modules.ledger.models import (
+    Batch,
     Contract,
     Delivery,
     DeliveryLine,
@@ -13,7 +16,9 @@ from seamly.modules.ledger.models import (
     InvoiceLine,
     Order,
     PriceBookEntry,
+    QualityHold,
     ServiceEvent,
+    StockMovement,
 )
 from seamly.modules.reconcile.contract import (
     ContractRow,
@@ -36,6 +41,9 @@ async def load_rows(
     dict[tuple[str, str], PriceRow],
     dict[str, int],
     dict[int, str],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
 ]:
     invoice_rows = (
         await session.execute(
@@ -126,6 +134,52 @@ async def load_rows(
         for entry, contract in price_rows
     }
 
+    batches = (await session.execute(select(Batch))).scalars()
+    batch_rows: list[dict[str, Any]] = [
+        {
+            "code": b.code,
+            "customer_id": b.customer_id,
+            "sku": b.sku,
+            "production_date": b.production_date,
+            "planned_units": b.planned_units,
+            "actual_units": b.actual_units,
+        }
+        for b in batches
+    ]
+    hold_rows = (
+        await session.execute(
+            select(QualityHold, Batch).join(Batch, QualityHold.batch_id == Batch.id)
+        )
+    ).all()
+    holds: list[dict[str, Any]] = [
+        {
+            "code": hold.code,
+            "batch_code": batch.code,
+            "reason": hold.reason,
+            "hold_date": hold.hold_date,
+            "released": hold.released,
+            "customer_id": batch.customer_id,
+        }
+        for hold, batch in hold_rows
+    ]
+    movement_rows = (
+        await session.execute(
+            select(StockMovement, Batch).join(Batch, StockMovement.batch_id == Batch.id)
+        )
+    ).all()
+    movements: list[dict[str, Any]] = [
+        {
+            "code": movement.code,
+            "batch_code": batch.code,
+            "sku": movement.sku,
+            "quantity": movement.quantity,
+            "direction": movement.direction,
+            "movement_date": movement.movement_date,
+            "customer_id": batch.customer_id,
+        }
+        for movement, batch in movement_rows
+    ]
+
     return (
         invoice_lines,
         delivery_lines,
@@ -135,4 +189,7 @@ async def load_rows(
         prices,
         penalties,
         customer_contract,
+        batch_rows,
+        holds,
+        movements,
     )

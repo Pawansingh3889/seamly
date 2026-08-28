@@ -20,25 +20,35 @@ What differs is what the records mean and which leaks only exist in food.
 
 ### F01 rejected_batch_billed
 
-A quality hold or rejection record for a batch, where the corresponding
-finished-goods invoice still shipped at full quantity. Price: affected
-units x unit price. A rejected batch that reaches a customer becomes a
-chargeback plus a goodwill credit plus a replacement run; catching it
-before dispatch is the whole value.
+A quality hold that was never released, where stock from that batch moved
+out (shipped) on or after the hold date. Price: shipped units x contracted
+unit price. A rejected batch that reaches a customer becomes a chargeback
+plus a goodwill credit plus a replacement run; catching it before dispatch
+is the whole value.
 
 ### F02 yield_shortfall_unbilled
 
-Production planned N units from a batch, yield recorded M < N, and the
-invoice was raised for N from stock movements that do not support it.
-Priced as an exposure like R02: the variance is a costing correction, not
-always a recovery.
+A batch whose yield fell short of plan, where invoiced units of that sku
+for that customer exceed what was actually produced. Priced as an
+exposure: the excess units x contracted unit price. The variance is a
+costing correction, not always a recovery.
 
 ### F03 shelf_life_writeoff
 
-Stock aged past its shelf-life clock and written off while orders were
-open that could have consumed it. Price: written-off units x unit price.
-This is the leak that makes production planning and sales visibility a
-finance conversation.
+Stock written off. Price: written-off units x contracted unit price.
+Checking open demand before disposal is a refinement, not a gate; the
+pounds lost are real either way. This is the leak that makes production
+planning and sales visibility a finance conversation.
+
+## Golden numbers (fixture pack, as tested)
+
+The food fixture set produces the 7 general exceptions plus:
+
+- F01: 182 units x GBP 265.00 = GBP 48,230.00 (batch B-2201 shipped after hold H-3301)
+- F02: 103 units x GBP 265.00 = GBP 27,295.00 (285 invoiced vs 182 produced)
+- F03: 18 units x GBP 265.00 = GBP 4,770.00 (movement M-4402)
+
+Total at risk across both packs: GBP 95,405.00 across 10 exceptions.
 
 ## Data expectations
 

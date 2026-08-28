@@ -10,6 +10,7 @@ from io import StringIO
 
 from seamly.common.types import Result
 from seamly.modules.ingest.contract import (
+    BatchCsv,
     ContractCsv,
     CustomerCsv,
     DeliveryCsv,
@@ -19,8 +20,10 @@ from seamly.modules.ingest.contract import (
     OrderCsv,
     OrderLineCsv,
     PriceBookCsv,
+    QualityHoldCsv,
     ServiceEventCsv,
     SourceBundle,
+    StockMovementCsv,
 )
 
 LEGAL_SUFFIXES = ("limited", "ltd", "co", "company", "plc", "inc", "llp", "uk")
@@ -39,6 +42,9 @@ REQUIRED_FILES = (
     "invoice_lines.csv",
     "service_events.csv",
 )
+
+# Vertical packs add these on top of the general set; absence is normal.
+OPTIONAL_FILES = ("batches.csv", "quality_holds.csv", "stock_movements.csv")
 
 
 def normalise_name(raw: str) -> str:
@@ -80,6 +86,8 @@ def validate_bundle(rows: dict[str, list[dict[str, str]]]) -> Result[SourceBundl
     for name in REQUIRED_FILES:
         if name not in rows:
             return Result.err("ingest.missing_file", f"Source bundle is missing {name}.")
+    for name in OPTIONAL_FILES:
+        rows.setdefault(name, [])
     try:
         bundle = SourceBundle(
             customers=[CustomerCsv(**r) for r in rows["customers.csv"]],
@@ -139,6 +147,38 @@ def validate_bundle(rows: dict[str, list[dict[str, str]]]) -> Result[SourceBundl
                 )
                 for r in rows["service_events.csv"]
             ],
+            batches=[
+                BatchCsv(
+                    batch_id=r["batch_id"],
+                    customer=r["customer"],
+                    sku=r["sku"],
+                    production_date=r["production_date"],
+                    planned_units=int(r["planned_units"]),
+                    actual_units=int(r["actual_units"]),
+                )
+                for r in rows.get("batches.csv", [])
+            ],
+            quality_holds=[
+                QualityHoldCsv(
+                    hold_id=r["hold_id"],
+                    batch_id=r["batch_id"],
+                    reason=r["reason"],
+                    hold_date=r["hold_date"],
+                    released=r["released"],
+                )
+                for r in rows.get("quality_holds.csv", [])
+            ],
+            stock_movements=[
+                StockMovementCsv(
+                    movement_id=r["movement_id"],
+                    batch_id=r["batch_id"],
+                    sku=r["sku"],
+                    quantity=int(r["quantity"]),
+                    direction=r["direction"],
+                    movement_date=r["movement_date"],
+                )
+                for r in rows.get("stock_movements.csv", [])
+            ],
         )
     except (KeyError, TypeError, ValueError) as exc:
         return Result.err("ingest.malformed_row", f"A source row is missing or malformed: {exc}")
@@ -150,6 +190,9 @@ def parse_bundle(texts: dict[str, str]) -> Result[SourceBundle]:
     for name in REQUIRED_FILES:
         if name not in texts:
             return Result.err("ingest.missing_file", f"Source bundle is missing {name}.")
+    for name in (*REQUIRED_FILES, *OPTIONAL_FILES):
+        if name not in texts:
+            continue
         parsed = read_csv(name, texts[name])
         if parsed.error is not None:
             return Result.err(parsed.error.code, parsed.error.message)

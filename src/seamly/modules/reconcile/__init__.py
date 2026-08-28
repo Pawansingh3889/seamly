@@ -1,4 +1,4 @@
-"""Reconcile module: runs the rule pack and prices what it finds."""
+"""Reconcile module: runs the rule packs and prices what it finds."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from seamly.common.types import Result
 from seamly.modules.exception import repository as exception_repo
+from seamly.modules.reconcile import food as food_pack
 from seamly.modules.reconcile import repository as reconcile_repo
 from seamly.modules.reconcile import service as rules
 from seamly.modules.reconcile.contract import Finding
@@ -28,6 +29,9 @@ async def handle_run(session: AsyncSession, payload: dict[str, Any]) -> Result[A
         prices,
         penalties,
         customer_contract,
+        batches,
+        holds,
+        movements,
     ) = await reconcile_repo.load_rows(session)
 
     excluded = rules.detect_duplicates(invoice_lines, contracts)
@@ -40,6 +44,13 @@ async def handle_run(session: AsyncSession, payload: dict[str, Any]) -> Result[A
     findings += rules.duplicate_invoices(invoice_lines, excluded)
     findings += rules.service_not_invoiced(invoice_lines, service_events)
     findings += rules.late_delivery_credit(delivery_lines, promises, contracts)
+
+    if batches:
+        findings += food_pack.rejected_batch_billed(holds, movements, prices, customer_contract)
+        findings += food_pack.yield_shortfall_unbilled(
+            batches, invoice_lines, prices, customer_contract
+        )
+        findings += food_pack.shelf_life_writeoff(movements, prices, customer_contract)
 
     priced = scoring.price_findings(findings, prices, penalties, customer_contract)
 

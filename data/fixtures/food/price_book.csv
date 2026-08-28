@@ -1,0 +1,5 @@
+contract_id,sku,kind,unit_price_minor
+CON-ACME,BRK-100,product,41250
+CON-ACME,SRV-INST,service,8500
+CON-BRW,FD-220,product,26500
+CON-CAL,GSK-300,product,975

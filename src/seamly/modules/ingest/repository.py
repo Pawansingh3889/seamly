@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from seamly.modules.ingest.service import REQUIRED_FILES
+from seamly.modules.ingest.service import OPTIONAL_FILES, REQUIRED_FILES
 
 
 def read_source_texts(fixture_dir: Path) -> dict[str, str]:
@@ -13,4 +13,9 @@ def read_source_texts(fixture_dir: Path) -> dict[str, str]:
         raise FileNotFoundError(
             f"Missing source files under {fixture_dir}: {missing}. Check SEAMLY_FIXTURE_DIR."
         )
-    return {name: (fixture_dir / name).read_text() for name in REQUIRED_FILES}
+    texts = {name: (fixture_dir / name).read_text() for name in REQUIRED_FILES}
+    for name in OPTIONAL_FILES:
+        path = fixture_dir / name
+        if path.exists():
+            texts[name] = path.read_text()
+    return texts
